@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>PlateSeeds plan</title>
+<style>
+  /* The app's Light and Dark palettes (src/PlateSeeds.Gui/Themes). */
+  :root {
+    color-scheme: light;
+    --window: #f6f5f2; --card: #ffffff; --border: #e2ded6; --panel: #eae7e1; --text: #1f1f1f; --hint: #6b6b6b;
+    --accent: #c2410c; --warning: #b45309; --error: #b91c1c; --changed: #fbd5d5;
+    --tile: #f6f5f2; --tile-border: #ece8e1;
+    --buy-badge: #0f766e; --store-badge: #253b66;
+    --cabinet: #ede3f7; --cabinet-text: #4c1d95; --cabinet-badge: #6d3fb0;
+    --drop: #fef08a; --drop-text: #713f12; --drop-badge: #a16207;
+    --in: #e3e8f4; --in-text: #253b66; --out: #fde7d9; --out-text: #7c2d12; --plus: #d5efea; --plus-text: #134e48;
+    --food: #d6e9fa; --food-text: #14467a; --customer: #e9ddf7; --customer-text: #4b2a7a; --deco: #f8e7c4; --deco-text: #6b4a0e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --window: #1b1a18; --card: #262522; --border: #3a3833; --panel: #302e2a; --text: #eceae6; --hint: #a29e97;
+      --accent: #f08a52; --warning: #f2a54a; --error: #f87171; --changed: #5a2a2a;
+      --tile: #302e2a; --tile-border: #3d3b36;
+      --buy-badge: #0f8a7f; --store-badge: #3b5ba0;
+      --cabinet: #3a2a4d; --cabinet-text: #d7b8f5; --cabinet-badge: #7a4fb0;
+      --drop: #5c4a00; --drop-text: #ffe066; --drop-badge: #9a7500;
+      --in: #28334a; --in-text: #afc5f2; --out: #4a2f20; --out-text: #f7bc98; --plus: #173f3a; --plus-text: #94e2d5;
+      --food: #1e3a55; --food-text: #b5d8f7; --customer: #38284f; --customer-text: #dcc8f5; --deco: #4a3a1a; --deco-text: #f2d59a;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --window: #1b1a18; --card: #262522; --border: #3a3833; --panel: #302e2a; --text: #eceae6; --hint: #a29e97;
+    --accent: #f08a52; --warning: #f2a54a; --error: #f87171; --changed: #5a2a2a;
+    --tile: #302e2a; --tile-border: #3d3b36;
+    --buy-badge: #0f8a7f; --store-badge: #3b5ba0;
+    --cabinet: #3a2a4d; --cabinet-text: #d7b8f5; --cabinet-badge: #7a4fb0;
+    --drop: #5c4a00; --drop-text: #ffe066; --drop-badge: #9a7500;
+    --in: #28334a; --in-text: #afc5f2; --out: #4a2f20; --out-text: #f7bc98; --plus: #173f3a; --plus-text: #94e2d5;
+    --food: #1e3a55; --food-text: #b5d8f7; --customer: #38284f; --customer-text: #dcc8f5; --deco: #4a3a1a; --deco-text: #f2d59a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--window); color: var(--text); font: 14px/1.35 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; overflow-wrap: anywhere; }
+  header { position: sticky; top: 0; z-index: 1; background: var(--window); border-bottom: 1px solid var(--border); padding: 8px 16px; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 18px; margin: 0; flex: 1 1 auto; }
+  h1 small { font-size: 13px; font-weight: 400; color: var(--hint); margin-left: 6px; }
+  button { font: inherit; color: var(--text); background: var(--tile); border: 1px solid var(--tile-border); border-radius: 6px; padding: 3px 9px; cursor: pointer; min-height: 30px; }
+  button:disabled { color: var(--hint); cursor: default; opacity: .75; }
+  #refresh { min-width: 118px; font-variant-numeric: tabular-nums; }
+  #status { flex: 1 1 100%; color: var(--hint); font-size: 12px; font-variant-numeric: tabular-nums; }
+  #status.problem { color: var(--warning); font-weight: 600; }
+  main { max-width: 760px; margin: 0 auto; padding: 10px 16px 40vh; }
+  #cards { color: var(--hint); font-size: 12px; margin: 0 0 10px; }
+  .day { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; }
+  .head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 12px; align-items: baseline; }
+  h2 { font-size: 15px; margin: 0; }
+  .coins { color: var(--hint); }
+  .coins.short { color: var(--warning); font-weight: 700; }
+  .picks { display: flex; flex-wrap: wrap; gap: 3px 6px; align-items: center; margin-top: 3px; color: var(--hint); }
+  .pick { border-radius: 7px; padding: 0 7px; font-weight: 600; background: var(--tile); color: var(--text); }
+  .pick.food { background: var(--food); color: var(--food-text); }
+  .pick.customer { background: var(--customer); color: var(--customer-text); }
+  .pick.deco { background: var(--deco); color: var(--deco-text); }
+  .empty, .cabinets { color: var(--hint); margin-top: 4px; }
+  .roll { margin-top: 6px; }
+  .rollhead { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px; }
+  .label { font-weight: 600; }
+  .price { color: var(--hint); }
+  .setting { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-weight: 700; color: var(--in-text); border-radius: 4px; padding: 0 3px; }
+  .setting.OUT { color: var(--out-text); }
+  .setting.OUTPLUS { color: var(--plus-text); }
+  .changed { background: var(--changed); }
+  .tag { border-radius: 6px; padding: 0 5px; font-size: 11px; font-weight: 700; background: var(--in); color: var(--in-text); }
+  .tag.OUT { background: var(--out); color: var(--out-text); }
+  .tag.OUTPLUS { background: var(--plus); color: var(--plus-text); }
+  .chips { display: flex; flex-wrap: wrap; gap: 3px 4px; margin-top: 3px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--tile-border); background: var(--tile); border-radius: 6px; padding: 1px 6px; font-weight: 600; }
+  .chip .badge { background: var(--buy-badge); color: #fff; border-radius: 5px; padding: 0 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .chip.store .badge { background: var(--store-badge); }
+  .chip.cabinet { background: var(--cabinet); border-color: var(--cabinet); color: var(--cabinet-text); }
+  .chip.cabinet .badge { background: var(--cabinet-badge); }
+  .chip.drop { background: var(--drop); border-color: var(--drop); color: var(--drop-text); }
+  .chip.drop .badge { background: var(--drop-badge); }
+  .chip.stale { border-color: var(--warning); }
+  .chip.stale .name { color: var(--warning); text-decoration: line-through; }
+  .end { border-left: 3px solid var(--accent); padding: 3px 0 3px 8px; margin-top: 6px; }
+  .end h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 14px; color: var(--accent); }
+  .end svg { width: 14px; height: 14px; fill: currentColor; flex: none; }
+  .line { display: flex; gap: 6px; align-items: flex-start; font-weight: 700; margin-top: 2px; padding: 1px 3px; border-radius: 4px; }
+  #message { color: var(--hint); padding: 24px 0; }
+  @media (max-width: 480px) { h1 { flex-basis: 100%; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1><span id="seed">PlateSeeds plan</span><small id="run"></small></h1>
+    <button id="prev" title="Previous day (key: P)" aria-label="Previous day">▲</button>
+    <button id="next" title="Next day (key: N)" aria-label="Next day">▼</button>
+    <button id="smaller" title="Smaller" aria-label="Smaller">−</button>
+    <button id="bigger" title="Bigger" aria-label="Bigger">+</button>
+    <button id="theme" title="Light or dark">Theme</button>
+    <button id="refresh" title="Check for changes now">Refresh</button>
+    <div id="status" role="status"></div>
+  </div>
+</header>
+<main>
+  <p id="cards"></p>
+  <div id="days"></div>
+  <p id="message"></p>
+</main>
+<script>
+"use strict";
+const API = "https://api.github.com/gists/";
+const FILE = "plateseeds-plan.json";
+const VERSION = 1;
+// GitHub allows 60 checks an hour per IP address when not signed in, counting every one. Checking every 2 minutes, with
+// Refresh 70 s after the last check, is about 51 an hour at most, so pressing it can't reach the limit.
+const CHECK_EVERY = 120000, REFRESH_AFTER = 70000;
+
+const $ = id => document.getElementById(id);
+const gist = new URLSearchParams(location.search).get("gist") ?? "";
+
+// Text only, never markup: what's in the Gist can't add anything to the page.
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = text;
+  return node;
+}
+const tagClass = tag => tag === "OUT+" ? "OUTPLUS" : tag ?? "";
+
+function tagEl(tag) { return el("span", "tag " + tagClass(tag), tag); }
+
+function chipEl(chip) {
+  const node = el("span", ["chip", chip.Kind, chip.IsStale ? "stale" : ""].join(" "));
+  node.title = chip.Tooltip ?? "";
+  node.append(el("span", "name", chip.Name), el("span", "badge", chip.Badge));
+  return node;
+}
+
+function endEl(end) {
+  const node = el("div", "end");
+  node.title = "What to set up before this day ends, so the next prep's plan comes out right";
+  const title = el("h3");
+  title.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 14.5A9 9 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"/></svg>';
+  title.append(el("span", "", end.Title));
+  node.append(title);
+  for (const line of end.Lines) {
+    const row = el("div", "line" + (line.Changed ? " changed" : ""));
+    if (line.Changed) row.title = line.Changed;
+    if (line.Tag) row.append(tagEl(line.Tag));
+    row.append(el("span", "", line.Text));
+    node.append(row);
+  }
+  return node;
+}
+
+function rollEl(roll) {
+  const node = el("div", "roll");
+  const head = el("div", "rollhead");
+  head.append(el("span", "label", roll.Label), el("span", "price", roll.Price));
+  if (roll.Tag) {
+    const setting = el("span", "setting " + tagClass(roll.Tag) + (roll.Changed ? " changed" : ""));
+    if (roll.Changed) setting.title = roll.Changed;
+    setting.append(tagEl(roll.Tag), el("span", "", roll.Setting));
+    head.append(setting);
+  }
+  node.append(head);
+  if (roll.Chips.length) {
+    const chips = el("div", "chips");
+    chips.append(...roll.Chips.map(chipEl));
+    node.append(chips);
+  }
+  return node;
+}
+
+function dayEl(day) {
+  const node = el("section", "day");
+  const head = el("div", "head");
+  head.append(el("h2", "", day.Title));
+  if (day.Coins) {
+    const coins = el("span", "coins" + (day.IsShort ? " short" : ""), day.Coins);
+    if (day.CoinsTooltip) coins.title = day.CoinsTooltip;
+    head.append(coins);
+  }
+  node.append(head);
+  if (day.Cards.length) {
+    const picks = el("div", "picks");
+    picks.title = "The card to pick before this prep";
+    picks.append(el("span", "", "Pick"));
+    for (const card of day.Cards) {
+      const pick = el("span", "pick " + card.Kind, card.Name);
+      pick.title = card.Category;
+      picks.append(pick);
+    }
+    node.append(picks);
+  }
+  if (day.Before) node.append(endEl(day.Before));
+  if (day.IsEmpty) node.append(el("div", "empty", "no shopping"));
+  node.append(...day.Rolls.map(rollEl));
+  if (day.Cabinets) node.append(el("div", "cabinets", day.Cabinets));
+  if (day.EndOfDay) node.append(endEl(day.EndOfDay));
+  return node;
+}
+
+function draw(plan) {
+  const scroll = window.scrollY;
+  $("seed").textContent = plan.Seed;
+  $("run").textContent = plan.Run;
+  $("cards").textContent = plan.Cards;
+  $("days").replaceChildren(...plan.Days.map(dayEl));
+  $("message").textContent = "";
+  document.title = plan.Seed + " · PlateSeeds plan";
+  window.scrollTo(0, scroll);
+}
+
+// ---- Checking the Gist ----
+
+let etag = null, lastCheck = 0, updatedAt = null, waitUntil = 0, problem = "", checking = false;
+
+async function check() {
+  if (checking || !gist) return;
+  checking = true;
+  lastCheck = Date.now();
+  try {
+    const headers = { Accept: "application/vnd.github+json" };
+    if (etag) headers["If-None-Match"] = etag;
+    const response = await fetch(API + encodeURIComponent(gist), { headers, cache: "no-store" });
+    if (response.status === 304) {
+      problem = "";
+    } else if (response.ok) {
+      const data = await response.json();
+      const file = data.files?.[FILE];
+      if (!file) throw new Error("This link doesn't hold a PlateSeeds plan.");
+      // Over 1 MB the API sends only part of a file; the raw link has it all.
+      const text = file.truncated ? await (await fetch(file.raw_url, { cache: "no-store" })).text() : file.content;
+      const plan = JSON.parse(text);
+      if (plan.Format !== "PlateSeeds live plan") throw new Error("This link doesn't hold a PlateSeeds plan.");
+      if (plan.Version > VERSION) throw new Error("This plan is newer than this page: reload the page.");
+      draw(plan);
+      etag = response.headers.get("etag");
+      updatedAt = Date.parse(data.updated_at);
+      problem = "";
+    } else if (response.status === 403 || response.status === 429) {
+      // Several people on one connection share the limit: GitHub's reply says when it's free again.
+      const reset = Number(response.headers.get("x-ratelimit-reset")) * 1000;
+      const after = Number(response.headers.get("retry-after")) * 1000;
+      waitUntil = after ? Date.now() + after : reset > Date.now() ? reset : Date.now() + 600000;
+      problem = "";
+    } else if (response.status === 404) {
+      problem = "This plan isn't there: the link may be wrong, or it was removed.";
+    } else {
+      problem = "GitHub said " + response.status + ". Trying again soon.";
+    }
+  } catch (e) {
+    problem = e instanceof TypeError ? "Can't reach GitHub. Trying again soon." : e.message;
+  } finally {
+    checking = false;
+    tick();
+  }
+}
+
+const seconds = ms => Math.ceil(ms / 1000);
+
+function ago(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return s + " s ago";
+  if (s < 3600) return Math.floor(s / 60) + " min ago";
+  return Math.floor(s / 3600) + " h ago";
+}
+
+function tick() {
+  const now = Date.now();
+  const refresh = $("refresh");
+  const wait = Math.max(waitUntil - now, lastCheck + REFRESH_AFTER - now);
+  refresh.disabled = wait > 0 || checking || !gist;
+  refresh.textContent = wait > 0 ? "Refresh in " + (wait >= 120000 ? Math.ceil(wait / 60000) + " min" : seconds(wait) + " s") : "Refresh";
+  const status = $("status");
+  status.classList.toggle("problem", !!problem || waitUntil > now);
+  if (!gist) status.textContent = "This page needs a link with its plan in it (…?gist=…).";
+  else if (problem) status.textContent = problem;
+  else if (waitUntil > now) status.textContent = "GitHub's limit for this connection is reached. Checking again in " + Math.ceil((waitUntil - now) / 60000) + " min.";
+  else if (checking && !updatedAt) status.textContent = "Loading…";
+  else if (updatedAt) status.textContent = "Plan updated " + ago(now - updatedAt) + " · checked " + ago(now - lastCheck);
+
+  // A hidden tab doesn't use up checks; it looks again when it's seen.
+  if (gist && !document.hidden && now >= waitUntil && now - lastCheck >= CHECK_EVERY) check();
+}
+
+// ---- Day stepping, zoom and theme ----
+
+// The next day is the first whose header is below the top (the previous, the last one above it); its header goes to the
+// top, under the bar, with the end of the day before still showing: its End of day block, else about its last row.
+function stepDay(direction) {
+  const days = [...document.querySelectorAll(".day")];
+  const bar = document.querySelector("header").getBoundingClientRect().bottom;
+  const targets = days.map((day, i) => {
+    if (i === 0) return -window.scrollY;   // the first day: the top of the page
+    const end = days[i - 1].querySelector(":scope > .end:last-child");
+    const top = day.getBoundingClientRect().top;
+    const peek = end ? top - end.getBoundingClientRect().top + 4 : 44;
+    return top - bar - peek;
+  });
+  const target = direction > 0 ? targets.find(y => y > 1) : targets.filter(y => y < -1).at(-1);
+  if (target !== undefined) window.scrollBy(0, target);
+}
+
+function remember(key, value) { try { localStorage.setItem(key, value); } catch {} }
+function recall(key) { try { return localStorage.getItem(key); } catch { return null; } }
+
+let zoom = Number(recall("zoom")) || 1;
+function applyZoom() { $("days").style.zoom = zoom; }
+function changeZoom(by) {
+  zoom = Math.round(Math.min(2, Math.max(0.6, zoom + by)) * 10) / 10;
+  applyZoom();
+  remember("zoom", zoom);
+}
+
+function isDark() {
+  const set = document.documentElement.dataset.theme;
+  return set ? set === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function setTheme(theme) { document.documentElement.dataset.theme = theme; }
+
+const savedTheme = recall("theme");
+if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
+applyZoom();
+
+$("refresh").onclick = check;
+$("next").onclick = () => stepDay(1);
+$("prev").onclick = () => stepDay(-1);
+$("smaller").onclick = () => changeZoom(-0.1);
+$("bigger").onclick = () => changeZoom(0.1);
+$("theme").onclick = () => {
+  const theme = isDark() ? "light" : "dark";
+  setTheme(theme);
+  remember("theme", theme);
+};
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (e.key === "n" || e.key === "N") stepDay(1);
+  if (e.key === "p" || e.key === "P") stepDay(-1);
+});
+document.addEventListener("visibilitychange", tick);
+setInterval(tick, 1000);
+
+if (gist) check(); else tick();
+</script>
+</body>
+</html>
