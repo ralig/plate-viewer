@@ -92,6 +92,17 @@
   .end svg { width: 14px; height: 14px; fill: currentColor; flex: none; }
   .line { display: flex; gap: 6px; align-items: flex-start; font-weight: 700; margin-top: 2px; padding: 1px 3px; border-radius: 4px; }
   #message { color: var(--hint); padding: 24px 0; }
+  #message:empty { display: none; }
+  #wide[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  #fitnote { flex: 1 1 100%; color: var(--warning); font-size: 12px; font-weight: 600; }
+  #fitnote:empty { display: none; }
+  /* Wide: the days top to bottom in columns as tall as the window (each day whole), on across the page, scrolling
+     sideways if they don't all fit. The height is set by the script, as the window and zoom make it. */
+  body.wide .bar { max-width: none; }
+  body.wide main { max-width: none; padding: 10px 16px 0; overflow-x: auto; overflow-y: hidden; }
+  body.wide #days { column-width: 340px; column-gap: 10px; column-fill: auto; }
+  body.wide .day { break-inside: avoid; }
+  .day.marked { outline: 3px solid var(--accent); outline-offset: -2px; }
   @media (max-width: 480px) { h1 { flex-basis: 100%; } }
 </style>
 </head>
@@ -103,9 +114,12 @@
     <button id="next" title="Next day (key: N)" aria-label="Next day">▼</button>
     <button id="smaller" title="Smaller" aria-label="Smaller">−</button>
     <button id="bigger" title="Bigger" aria-label="Bigger">+</button>
+    <button id="wide" title="Wide: every day side by side in columns, each day whole, to see the whole plan at once. Its zoom is its own; N / P mark the day you're on. Remembered on this browser." aria-pressed="false">Wide</button>
+    <button id="fit" title="The largest size that shows every day, none split, without scrolling sideways" hidden>Fit</button>
     <button id="theme" title="Light or dark">Theme</button>
     <button id="refresh" title="Check for changes now">Refresh</button>
     <div id="status" role="status"></div>
+    <div id="fitnote" role="status"></div>
   </div>
 </header>
 <main>
@@ -209,14 +223,17 @@ function dayEl(day) {
 }
 
 function draw(plan) {
-  const scroll = window.scrollY;
+  const scroll = window.scrollY, across = document.querySelector("main").scrollLeft;
   $("seed").textContent = plan.Seed;
   $("run").textContent = plan.Run;
   $("cards").textContent = plan.Cards;
   $("days").replaceChildren(...plan.Days.map(dayEl));
   $("message").textContent = "";
   document.title = plan.Seed + " · PlateSeeds plan";
+  layout();
+  markDay();
   window.scrollTo(0, scroll);
+  document.querySelector("main").scrollLeft = across;
 }
 
 // ---- Checking the Gist ----
@@ -297,6 +314,7 @@ function tick() {
 // The next day is the first whose header is below the top (the previous, the last one above it); its header goes to the
 // top, under the bar, with the end of the day before still showing: its End of day block, else about its last row.
 function stepDay(direction) {
+  if (wide) return stepWideDay(direction);
   const days = [...document.querySelectorAll(".day")];
   const bar = document.querySelector("header").getBoundingClientRect().bottom;
   const targets = days.map((day, i) => {
@@ -313,12 +331,74 @@ function stepDay(direction) {
 function remember(key, value) { try { localStorage.setItem(key, value); } catch {} }
 function recall(key) { try { return localStorage.getItem(key); } catch { return null; } }
 
-let zoom = Number(recall("zoom")) || 1;
-function applyZoom() { $("days").style.zoom = zoom; }
-function changeZoom(by) {
-  zoom = Math.round(Math.min(2, Math.max(0.6, zoom + by)) * 10) / 10;
-  applyZoom();
-  remember("zoom", zoom);
+// Narrow and Wide each keep their own size.
+let wide = recall("wide") === "1";
+let zoomNarrow = Number(recall("zoom")) || 1, zoomWide = Number(recall("zoomWide")) || 0.8;
+let marked = -1;   // the day N / P are on, in Wide
+const zoomNow = () => wide ? zoomWide : zoomNarrow;
+
+function changeZoom(by) { setZoom(zoomNow() + by); }
+function setZoom(value) {
+  const z = Math.round(Math.min(2, Math.max(wide ? 0.4 : 0.6, value)) * 20) / 20;
+  if (wide) { zoomWide = z; remember("zoomWide", z); } else { zoomNarrow = z; remember("zoom", z); }
+  layout();
+}
+
+// The page as Narrow or Wide and its zoom; Wide's columns are as tall as the room left under the bar.
+function layout() {
+  const days = $("days");
+  document.body.classList.toggle("wide", wide);
+  $("wide").setAttribute("aria-pressed", String(wide));
+  $("fit").hidden = !wide;
+  days.style.zoom = zoomNow();
+  if (wide) {
+    const room = window.innerHeight - days.getBoundingClientRect().top - 24;   // under the bar, room for a scrollbar
+    days.style.height = Math.max(150, room) / zoomNow() + "px";
+  } else {
+    days.style.height = "";
+  }
+  return checkFit();
+}
+
+// Wide: says when it doesn't all fit (a day split across columns, or days off to the right).
+function checkFit() {
+  let note = "";
+  if (wide) {
+    const main = document.querySelector("main");
+    const split = [...document.querySelectorAll(".day")].find(day => day.getClientRects().length > 1);
+    if (split) note = split.querySelector("h2").textContent + " is taller than the window: it runs on into the next column. Press Fit, or make it smaller (−).";
+    else if (main.scrollWidth > main.clientWidth + 1) note = "Wider than the window: some days are off to the right (the mouse wheel scrolls sideways). Press Fit, or make it smaller (−).";
+  }
+  $("fitnote").textContent = note;
+  return note === "";
+}
+
+function fit() {
+  for (let z = 2; z >= 0.4 - 0.001; z -= 0.05) {
+    setZoom(z);
+    if (checkFit()) return;
+  }
+  $("fitnote").textContent = "Doesn't fit even at the smallest size: the window is too small for this plan.";
+}
+
+function setWide(on) {
+  wide = on;
+  remember("wide", on ? "1" : "0");
+  marked = -1;
+  layout();
+  markDay();
+}
+
+function markDay() {
+  document.querySelectorAll(".day").forEach((day, i) => day.classList.toggle("marked", wide && i === marked));
+}
+
+function stepWideDay(direction) {
+  const days = document.querySelectorAll(".day");
+  if (!days.length) return;
+  marked = marked < 0 ? (direction > 0 ? 0 : days.length - 1) : Math.min(days.length - 1, Math.max(0, marked + direction));
+  markDay();
+  days[marked].scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 function isDark() {
@@ -329,9 +409,18 @@ function setTheme(theme) { document.documentElement.dataset.theme = theme; }
 
 const savedTheme = recall("theme");
 if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
-applyZoom();
+layout();
 
 $("refresh").onclick = check;
+$("wide").onclick = () => setWide(!wide);
+$("fit").onclick = fit;
+window.addEventListener("resize", layout);
+// Wide scrolls sideways with the mouse wheel.
+document.querySelector("main").addEventListener("wheel", e => {
+  if (!wide || e.ctrlKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+  document.querySelector("main").scrollLeft += e.deltaY;
+  e.preventDefault();
+}, { passive: false });
 $("next").onclick = () => stepDay(1);
 $("prev").onclick = () => stepDay(-1);
 $("smaller").onclick = () => changeZoom(-0.1);
