@@ -17,6 +17,7 @@
     --drop: #fef08a; --drop-text: #713f12; --drop-badge: #a16207;
     --in: #e3e8f4; --in-text: #253b66; --out: #fde7d9; --out-text: #7c2d12; --plus: #d5efea; --plus-text: #134e48;
     --food: #d6e9fa; --food-text: #14467a; --customer: #e9ddf7; --customer-text: #4b2a7a; --deco: #f8e7c4; --deco-text: #6b4a0e;
+    --sheet-store: #cc0000; --sheet-cabinet: #1155cc; --sheet-upgrade: #674ea7; --sheet-drop: #a16207;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -29,6 +30,7 @@
       --drop: #5c4a00; --drop-text: #ffe066; --drop-badge: #9a7500;
       --in: #28334a; --in-text: #afc5f2; --out: #4a2f20; --out-text: #f7bc98; --plus: #173f3a; --plus-text: #94e2d5;
       --food: #1e3a55; --food-text: #b5d8f7; --customer: #38284f; --customer-text: #dcc8f5; --deco: #4a3a1a; --deco-text: #f2d59a;
+      --sheet-store: #ff7b7b; --sheet-cabinet: #8ab4f8; --sheet-upgrade: #c4a7f5; --sheet-drop: #f2c14e;
     }
   }
   :root[data-theme="dark"] {
@@ -41,6 +43,7 @@
     --drop: #5c4a00; --drop-text: #ffe066; --drop-badge: #9a7500;
     --in: #28334a; --in-text: #afc5f2; --out: #4a2f20; --out-text: #f7bc98; --plus: #173f3a; --plus-text: #94e2d5;
     --food: #1e3a55; --food-text: #b5d8f7; --customer: #38284f; --customer-text: #dcc8f5; --deco: #4a3a1a; --deco-text: #f2d59a;
+    --sheet-store: #ff7b7b; --sheet-cabinet: #8ab4f8; --sheet-upgrade: #c4a7f5; --sheet-drop: #f2c14e;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--window); color: var(--text); font: 14px/1.35 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; overflow-wrap: anywhere; }
@@ -93,7 +96,6 @@
   .line { display: flex; gap: 6px; align-items: flex-start; font-weight: 700; margin-top: 2px; padding: 1px 3px; border-radius: 4px; }
   #message { color: var(--hint); padding: 24px 0; }
   #message:empty { display: none; }
-  #wide[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
   #fitnote { flex: 1 1 100%; color: var(--warning); font-size: 12px; font-weight: 600; }
   #fitnote:empty { display: none; }
   /* Wide: the days top to bottom in columns as tall as the window (each day whole), on across the page, scrolling
@@ -103,6 +105,42 @@
   body.wide #days { column-width: 340px; column-gap: 10px; column-fill: auto; }
   body.wide .day { break-inside: avoid; }
   .day.marked { outline: 3px solid var(--accent); outline-offset: -2px; }
+  #wide[aria-pressed="true"], #rows[aria-pressed="true"], #rowopts button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  #rowopts { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  #rowopts button { min-height: 26px; padding: 1px 8px; font-size: 13px; }
+  /* Rows: one day per row on a shared grid (subgrid), so the roll columns line up from day to day; as wide as it comes
+     out, scrolling sideways if it doesn't fit. */
+  body.rows .bar { max-width: none; }
+  body.rows main { max-width: none; overflow-x: auto; }
+  body.rows #days { display: grid; width: max-content; align-items: start; }
+  .row { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: start; }
+  .row > div { min-width: 0; padding: 2px 8px; }
+  .colhead > div { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--hint); padding-bottom: 3px; white-space: nowrap; }
+  .row.day { padding: 5px 0; margin-bottom: 6px; border-radius: 8px; }
+  .row.quiet { background: transparent; }
+  .rowpick { display: flex; flex-wrap: wrap; gap: 2px 4px; max-width: 260px; align-self: center; padding-left: 10px !important; }
+  .rowdaycell { align-self: center; white-space: nowrap; padding-right: 12px !important; }
+  .rowdaycell b { font-size: 14px; font-weight: 600; }
+  .rowdaycell .coins { font-size: 11px; display: block; }
+  .cell { border-left: 1px solid var(--tile-border); align-self: stretch; display: flex; align-items: center; }
+  .cell > .inner { max-width: var(--cell, 520px); }
+  .cell .nothing, .rowempty { color: var(--hint); }
+  .rowempty { align-self: center; }
+  .setwrap { display: inline-flex; vertical-align: middle; border-radius: 4px; padding: 1px 2px; margin-right: 3px; }
+  .sheet { font-weight: 600; }
+  .sheet.store { color: var(--sheet-store); }
+  .sheet.cabinet { color: var(--sheet-cabinet); }
+  .sheet.upgrade { color: var(--sheet-upgrade); }
+  .sheet.drop { color: var(--sheet-drop); }
+  .sheet.stale { color: var(--warning); text-decoration: line-through; }
+  .comma { color: var(--hint); }
+  .compactchips { display: inline-flex; flex-wrap: wrap; gap: 2px 4px; vertical-align: middle; }
+  .chip.compact { gap: 4px; padding: 0 5px 0 2px; }
+  .chip.compact .badge { min-width: 15px; text-align: center; padding: 0 3px; }
+  .chip.upgrade { background: var(--cabinet); border-color: var(--cabinet); color: var(--cabinet-text); }
+  .chip.upgrade .badge { background: var(--cabinet-badge); }
+  .rowend .line { font-size: 12px; font-weight: 600; margin: 0; }
+  .rowend { max-width: 300px; }
   @media (max-width: 480px) { h1 { flex-basis: 100%; } }
 </style>
 </head>
@@ -115,11 +153,17 @@
     <button id="smaller" title="Smaller" aria-label="Smaller">−</button>
     <button id="bigger" title="Bigger" aria-label="Bigger">+</button>
     <button id="wide" title="Wide: every day side by side in columns, each day whole, to see the whole plan at once. Its zoom is its own; N / P mark the day you're on. Remembered on this browser." aria-pressed="false">Wide</button>
+    <button id="rows" title="Rows: one day per row and a column per roll, like a spreadsheet plan. Its zoom is its own and starts at Fit; N / P mark the day you're on. Remembered on this browser." aria-pressed="false">Rows</button>
     <button id="fit" title="The largest size that shows every day, none split, without scrolling sideways" hidden>Fit</button>
     <button id="theme" title="Light or dark">Theme</button>
     <button id="refresh" title="Check for changes now">Refresh</button>
     <div id="status" role="status"></div>
     <div id="fitnote" role="status"></div>
+    <div id="rowopts" hidden>
+      <button id="compact" aria-pressed="false" title="Small chips in the overview's colours with a one-letter badge (B buy, S store, C from a cabinet, U upgrade, D drop). Off: the names as text, coloured by action: buy plain, store red, from a cabinet blue, upgrade purple, drop amber.">Compact</button>
+      <button id="narrowcells" aria-pressed="false" title="Narrow cells: a busy roll wraps onto more lines, so the rows are less wide but taller">Narrow cells</button>
+      <button id="shortnames" aria-pressed="true" title="Short names (Research for Research Desk, Micro for Microwave...), the full name on hover; roll headings RR1, RR2...">Short names</button>
+    </div>
   </div>
 </header>
 <main>
@@ -222,12 +266,143 @@ function dayEl(day) {
   return node;
 }
 
+// ---- Rows ----
+
+// An item's Rows look, text and badge; worked out here when the app that sent the plan is older than Rows.
+const lookOf = chip => chip.Look ?? (chip.Badge.startsWith("UPGRADE") ? "upgrade" : chip.Kind);
+const markOf = chip => chip.Mark ?? ({ buy: "B", store: "S", cabinet: "C", upgrade: "U" }[lookOf(chip)] ?? "D");
+function textOf(chip) {
+  const text = shortNames ? chip.Short : chip.Text;
+  if (text) return text;
+  let name = chip.Name;
+  const twice = name.endsWith(" ×2");
+  if (twice) name = name.slice(0, -3);
+  if (name.includes(" → ")) name = name.split(" → ")[1];
+  return (twice ? "2× " : "") + name;
+}
+const rowsTip = chip => `${chip.Badge}: ${chip.Name} (${chip.IsStale ? "can't: " : ""}${chip.Tooltip ?? ""})`;
+
+function cell(cls, column, ...children) {
+  const node = el("div", cls);
+  if (column) node.style.gridColumn = column;
+  node.append(...children);
+  return node;
+}
+
+function settingWrap(roll) {
+  const wrap = el("span", "setwrap" + (roll.Changed ? " changed" : ""));
+  wrap.title = "Then reroll with " + roll.Setting + (roll.Changed ? "\n" + roll.Changed : "");
+  wrap.append(tagEl(roll.Tag));
+  return wrap;
+}
+
+function rowRoll(roll) {
+  const inner = el("div", "inner");
+  inner.title = `${roll.Label} (${roll.Price})`;
+  if (roll.Tag) inner.append(settingWrap(roll));
+  if (!roll.Chips.length) {
+    const nothing = el("span", "nothing", "·");
+    nothing.title = "Nothing done: just reroll";
+    inner.append(nothing);
+  }
+  if (compact) {
+    const chips = el("span", "compactchips");
+    for (const chip of roll.Chips) {
+      const node = el("span", ["chip", "compact", lookOf(chip), chip.IsStale ? "stale" : ""].join(" "));
+      node.title = rowsTip(chip);
+      node.append(el("span", "badge", markOf(chip)), el("span", "name", textOf(chip)));
+      chips.append(node);
+    }
+    if (roll.Chips.length) inner.append(chips);
+  } else {
+    roll.Chips.forEach((chip, i) => {
+      const item = el("span", "sheet " + lookOf(chip) + (chip.IsStale ? " stale" : ""), textOf(chip));
+      item.title = rowsTip(chip);
+      inner.append(item);
+      if (i < roll.Chips.length - 1) inner.append(el("span", "comma", ", "));
+    });
+  }
+  return inner;
+}
+
+function rowEnd(end) {
+  const node = el("div", "rowend");
+  node.title = end.Title + ": what to set up before it ends, so the next prep's plan comes out right";
+  for (const line of end.Lines) {
+    const row = el("div", "line" + (line.Changed ? " changed" : ""));
+    if (line.Changed) row.title = line.Changed;
+    if (line.Tag) row.append(tagEl(line.Tag));
+    row.append(el("span", "", line.Text));
+    node.append(row);
+  }
+  return node;
+}
+
+function rowsEls(plan) {
+  const days = plan.Days;
+  const rolls = Math.max(1, ...days.map(d => d.Rolls.length));
+  const hasEnd = days.some(d => d.EndOfDay || d.Before);
+  const endCol = 3 + rolls;
+  $("days").style.gridTemplateColumns = `repeat(${rolls + 2 + (hasEnd ? 1 : 0)}, max-content)`;
+  $("days").style.setProperty("--cell", narrowCells ? "180px" : "520px");
+  const out = [];
+  const head = el("div", "row colhead");
+  head.append(el("div", "", "Pick"), el("div", "", "Day"));
+  for (let i = 0; i < rolls; i++) head.append(el("div", "", i === 0 ? "Shop" : shortNames ? "RR" + i : "Reroll " + i));
+  if (hasEnd) head.append(el("div", "", "End of day"));
+  out.push(head);
+  if (days[0]?.Before) {
+    const row = el("div", "row day quiet before");
+    row.append(cell("rowpick", "1"), cell("rowdaycell coins", "2", days[0].Before.Title), cell("cell", String(endCol), rowEnd(days[0].Before)));
+    out.push(row);
+  }
+  for (const day of days) {
+    const row = el("div", "row day rowday" + (day.Rolls.length ? "" : " quiet"));
+    const picks = cell("rowpick", "1");
+    for (const card of day.Cards) {
+      const pick = el("span", "pick " + card.Kind, shortNames ? card.Short ?? card.Name : card.Name);
+      pick.title = card.Name + " (" + card.Category + ")";
+      picks.append(pick);
+    }
+    const after = day.Title.startsWith("After");
+    let heading = day.Heading ?? day.Title.replace("Prep of day", "Day");
+    if (after && shortNames) heading = heading.replace("After day ", "After ");
+    const dayCell = cell("rowdaycell", "2", el("b", "", heading));
+    const coins = day.ShortCoins ?? day.Coins;
+    if (coins) dayCell.append(el("span", "coins" + (day.IsShort ? " short" : ""), coins));
+    const hover = [day.CoinsTooltip, day.Cabinets].filter(Boolean);
+    if (hover.length) dayCell.title = hover.join("\n");
+    row.append(picks, dayCell);
+    if (!day.Rolls.length) {
+      const note = day.IsEmpty ? "no shopping" : after ? "the run ends" : "";
+      if (note) row.append(cell("rowempty", `3 / span ${rolls}`, note));
+    }
+    day.Rolls.forEach((roll, i) => row.append(cell("cell", String(3 + i), rowRoll(roll))));
+    if (day.EndOfDay) row.append(cell("cell", String(endCol), rowEnd(day.EndOfDay)));
+    out.push(row);
+  }
+  return out;
+}
+
+let current = null;   // the plan drawn
+
+function render() {
+  if (!current) return;
+  const days = $("days");
+  if (mode === "rows") days.replaceChildren(...rowsEls(current));
+  else {
+    days.style.gridTemplateColumns = "";
+    days.replaceChildren(...current.Days.map(dayEl));
+  }
+}
+
 function draw(plan) {
   const scroll = window.scrollY, across = document.querySelector("main").scrollLeft;
+  current = plan;
   $("seed").textContent = plan.Seed;
   $("run").textContent = plan.Run;
   $("cards").textContent = plan.Cards;
-  $("days").replaceChildren(...plan.Days.map(dayEl));
+  render();
   $("message").textContent = "";
   document.title = plan.Seed + " · PlateSeeds plan";
   layout();
@@ -314,7 +489,7 @@ function tick() {
 // The next day is the first whose header is below the top (the previous, the last one above it); its header goes to the
 // top, under the bar, with the end of the day before still showing: its End of day block, else about its last row.
 function stepDay(direction) {
-  if (wide) return stepWideDay(direction);
+  if (mode !== "narrow") return stepWideDay(direction);
   const days = [...document.querySelectorAll(".day")];
   const bar = document.querySelector("header").getBoundingClientRect().bottom;
   const targets = days.map((day, i) => {
@@ -331,26 +506,46 @@ function stepDay(direction) {
 function remember(key, value) { try { localStorage.setItem(key, value); } catch {} }
 function recall(key) { try { return localStorage.getItem(key); } catch { return null; } }
 
-// Narrow and Wide each keep their own size.
-let wide = recall("wide") === "1";
+// Narrow, Wide or Rows, each with its own size; Rows' starts at Fit until set by hand (− / +).
+let mode = ["narrow", "wide", "rows"].includes(recall("layout")) ? recall("layout") : recall("wide") === "1" ? "wide" : "narrow";
+let wide = mode === "wide";
 let zoomNarrow = Number(recall("zoom")) || 1, zoomWide = Number(recall("zoomWide")) || 0.8;
-let marked = -1;   // the day N / P are on, in Wide
-const zoomNow = () => wide ? zoomWide : zoomNarrow;
+let zoomRows = Number(recall("zoomRows")) || 1, rowsByHand = !!Number(recall("zoomRows"));
+let compact = recall("rowsCompact") === "1", narrowCells = recall("rowsNarrow") === "1", shortNames = recall("rowsFull") !== "1";
+let marked = -1;   // the day N / P are on, in Wide and Rows
+const zoomNow = () => mode === "wide" ? zoomWide : mode === "rows" ? zoomRows : zoomNarrow;
 
 function changeZoom(by) { setZoom(zoomNow() + by); }
 function setZoom(value) {
-  const z = Math.round(Math.min(2, Math.max(wide ? 0.4 : 0.6, value)) * 20) / 20;
-  if (wide) { zoomWide = z; remember("zoomWide", z); } else { zoomNarrow = z; remember("zoom", z); }
+  const z = Math.round(Math.min(2, Math.max(mode === "rows" ? 0.3 : wide ? 0.4 : 0.6, value)) * 20) / 20;
+  if (mode === "rows") { zoomRows = z; rowsByHand = true; remember("zoomRows", z); }
+  else if (wide) { zoomWide = z; remember("zoomWide", z); } else { zoomNarrow = z; remember("zoom", z); }
   layout();
 }
 
-// The page as Narrow or Wide and its zoom; Wide's columns are as tall as the room left under the bar.
+// Rows' Fit: the largest size (in steps of 5%, up to 150%) showing every roll without scrolling sideways.
+function fitRows() {
+  const days = $("days"), main = document.querySelector("main");
+  const natural = days.getBoundingClientRect().width / (Number(days.style.zoom) || 1);
+  const room = main.clientWidth - 32;   // inside main's side padding
+  if (natural > 0) zoomRows = Math.min(1.5, Math.max(0.3, Math.floor(room / natural * 20) / 20));
+  days.style.zoom = zoomRows;
+}
+
+// The page as Narrow, Wide or Rows and its zoom; Wide's columns are as tall as the room left under the bar.
 function layout() {
   const days = $("days");
   document.body.classList.toggle("wide", wide);
+  document.body.classList.toggle("rows", mode === "rows");
   $("wide").setAttribute("aria-pressed", String(wide));
-  $("fit").hidden = !wide;
+  $("rows").setAttribute("aria-pressed", String(mode === "rows"));
+  $("rowopts").hidden = mode !== "rows";
+  $("compact").setAttribute("aria-pressed", String(compact));
+  $("narrowcells").setAttribute("aria-pressed", String(narrowCells));
+  $("shortnames").setAttribute("aria-pressed", String(shortNames));
+  $("fit").hidden = mode === "narrow";
   days.style.zoom = zoomNow();
+  if (mode === "rows" && !rowsByHand) fitRows();
   if (wide) {
     const room = window.innerHeight - days.getBoundingClientRect().top - 24;   // under the bar, room for a scrollbar
     days.style.height = Math.max(150, room) / zoomNow() + "px";
@@ -360,9 +555,12 @@ function layout() {
   return checkFit();
 }
 
-// Wide: says when it doesn't all fit (a day split across columns, or days off to the right).
+// Wide and Rows: says when it doesn't all fit (a day split across columns, or days or rolls off to the right).
 function checkFit() {
   let note = "";
+  const main = document.querySelector("main");
+  if (mode === "rows" && main.scrollWidth > main.clientWidth + 1)
+    note = "Wider than the window: the last rolls are off to the right (scroll sideways). Press Fit, or make it smaller (−).";
   if (wide) {
     const main = document.querySelector("main");
     const split = [...document.querySelectorAll(".day")].find(day => day.getClientRects().length > 1);
@@ -374,6 +572,12 @@ function checkFit() {
 }
 
 function fit() {
+  if (mode === "rows") {
+    rowsByHand = false;
+    remember("zoomRows", "0");
+    layout();
+    return;
+  }
   for (let z = 2; z >= 0.4 - 0.001; z -= 0.05) {
     setZoom(z);
     if (checkFit()) return;
@@ -381,20 +585,27 @@ function fit() {
   $("fitnote").textContent = "Doesn't fit even at the smallest size: the window is too small for this plan.";
 }
 
-function setWide(on) {
-  wide = on;
-  remember("wide", on ? "1" : "0");
+function setMode(next) {
+  const was = mode;
+  mode = next;
+  wide = mode === "wide";
+  remember("layout", mode);
+  remember("wide", wide ? "1" : "0");
   marked = -1;
+  if ((was === "rows") !== (mode === "rows")) render();
   layout();
   markDay();
 }
 
+// The days N / P step through: in Rows, the day rows (not the end of day 1's).
+const dayEls = () => document.querySelectorAll(mode === "rows" ? ".rowday" : ".day");
+
 function markDay() {
-  document.querySelectorAll(".day").forEach((day, i) => day.classList.toggle("marked", wide && i === marked));
+  dayEls().forEach((day, i) => day.classList.toggle("marked", mode !== "narrow" && i === marked));
 }
 
 function stepWideDay(direction) {
-  const days = document.querySelectorAll(".day");
+  const days = dayEls();
   if (!days.length) return;
   marked = marked < 0 ? (direction > 0 ? 0 : days.length - 1) : Math.min(days.length - 1, Math.max(0, marked + direction));
   markDay();
@@ -412,7 +623,20 @@ if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
 layout();
 
 $("refresh").onclick = check;
-$("wide").onclick = () => setWide(!wide);
+$("wide").onclick = () => setMode(wide ? "narrow" : "wide");
+$("rows").onclick = () => setMode(mode === "rows" ? "narrow" : "rows");
+function rowOption(id, key, get, set) {
+  $(id).onclick = () => {
+    set(!get());
+    remember(key, get() ? "1" : "0");
+    render();
+    layout();
+    markDay();
+  };
+}
+rowOption("compact", "rowsCompact", () => compact, v => compact = v);
+rowOption("narrowcells", "rowsNarrow", () => narrowCells, v => narrowCells = v);
+rowOption("shortnames", "rowsFull", () => !shortNames, v => shortNames = !v);
 $("fit").onclick = fit;
 window.addEventListener("resize", layout);
 // Wide scrolls sideways with the mouse wheel.
