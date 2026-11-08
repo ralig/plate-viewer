@@ -57,7 +57,6 @@
   #status { flex: 1 1 100%; color: var(--hint); font-size: 12px; font-variant-numeric: tabular-nums; }
   #status.problem { color: var(--warning); font-weight: 600; }
   main { max-width: 760px; margin: 0 auto; padding: 10px 16px 40vh; }
-  #cards { color: var(--hint); font-size: 12px; margin: 0 0 10px; }
   .day { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; }
   .head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 12px; align-items: baseline; }
   h2 { font-size: 15px; margin: 0; }
@@ -105,9 +104,10 @@
   body.wide #days { column-width: 340px; column-gap: 10px; column-fill: auto; }
   body.wide .day { break-inside: avoid; }
   .day.marked { outline: 3px solid var(--accent); outline-offset: -2px; }
-  #wide[aria-pressed="true"], #rows[aria-pressed="true"], #rowopts button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  #rowopts { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  #rowopts button { min-height: 26px; padding: 1px 8px; font-size: 13px; }
+  #wide[aria-pressed="true"], #rows[aria-pressed="true"], #shortnames[aria-pressed="true"], #rowopts button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  /* Rows' options sit in the bar with the other buttons, to keep the plan's vertical room. */
+  #rowopts { display: contents; }
+  #rowopts[hidden] { display: none; }
   /* Rows: one day per row on a shared grid (subgrid), so the roll columns line up from day to day; as wide as it comes
      out, scrolling sideways if it doesn't fit. */
   body.rows .bar { max-width: none; }
@@ -154,20 +154,19 @@
     <button id="bigger" title="Bigger" aria-label="Bigger">+</button>
     <button id="wide" title="Wide: every day side by side in columns, each day whole, to see the whole plan at once. Its zoom is its own; N / P mark the day you're on. Remembered on this browser." aria-pressed="false">Wide</button>
     <button id="rows" title="Rows: one day per row and a column per roll, like a spreadsheet plan. Its zoom is its own and starts at Fit; N / P mark the day you're on. Remembered on this browser." aria-pressed="false">Rows</button>
+    <div id="rowopts" hidden>
+      <button id="compact" aria-pressed="false" title="Small chips in the overview's colours with a one-letter badge (B buy, S store, C from a cabinet, U upgrade, D drop). Off: the names as text, coloured by action: buy plain, store red, from a cabinet blue, upgrade purple, drop amber.">Compact</button>
+      <button id="narrowcells" aria-pressed="false" title="Narrow cells: a busy roll wraps onto more lines, so the rows are less wide but taller">Narrow cells</button>
+    </div>
+    <button id="shortnames" aria-pressed="true" title="Short names (Research for Research Desk, Micro for Microwave...) for blueprints and cards, the full name on hover; in Rows, roll headings RR1, RR2... Remembered on this browser.">Short names</button>
     <button id="fit" title="The largest size that shows every day, none split, without scrolling sideways" hidden>Fit</button>
     <button id="theme" title="Light or dark">Theme</button>
     <button id="refresh" title="Check for changes now">Refresh</button>
     <div id="status" role="status"></div>
     <div id="fitnote" role="status"></div>
-    <div id="rowopts" hidden>
-      <button id="compact" aria-pressed="false" title="Small chips in the overview's colours with a one-letter badge (B buy, S store, C from a cabinet, U upgrade, D drop). Off: the names as text, coloured by action: buy plain, store red, from a cabinet blue, upgrade purple, drop amber.">Compact</button>
-      <button id="narrowcells" aria-pressed="false" title="Narrow cells: a busy roll wraps onto more lines, so the rows are less wide but taller">Narrow cells</button>
-      <button id="shortnames" aria-pressed="true" title="Short names (Research for Research Desk, Micro for Microwave...), the full name on hover; roll headings RR1, RR2...">Short names</button>
-    </div>
   </div>
 </header>
 <main>
-  <p id="cards"></p>
   <div id="days"></div>
   <p id="message"></p>
 </main>
@@ -196,8 +195,9 @@ function tagEl(tag) { return el("span", "tag " + tagClass(tag), tag); }
 
 function chipEl(chip) {
   const node = el("span", ["chip", chip.Kind, chip.IsStale ? "stale" : ""].join(" "));
-  node.title = chip.Tooltip ?? "";
-  node.append(el("span", "name", chip.Name), el("span", "badge", chip.Badge));
+  const short = shortNames && chip.ShortName && chip.ShortName !== chip.Name;
+  node.title = (short ? chip.Name + ": " : "") + (chip.Tooltip ?? "");
+  node.append(el("span", "name", short ? chip.ShortName : chip.Name), el("span", "badge", chip.Badge));
   return node;
 }
 
@@ -252,8 +252,8 @@ function dayEl(day) {
     picks.title = "The card to pick before this prep";
     picks.append(el("span", "", "Pick"));
     for (const card of day.Cards) {
-      const pick = el("span", "pick " + card.Kind, card.Name);
-      pick.title = card.Category;
+      const pick = el("span", "pick " + card.Kind, shortNames ? card.Short ?? card.Name : card.Name);
+      pick.title = (shortNames && card.Short && card.Short !== card.Name ? card.Name + ": " : "") + card.Category;
       picks.append(pick);
     }
     node.append(picks);
@@ -401,7 +401,6 @@ function draw(plan) {
   current = plan;
   $("seed").textContent = plan.Seed;
   $("run").textContent = plan.Run;
-  $("cards").textContent = plan.Cards;
   render();
   $("message").textContent = "";
   document.title = plan.Seed + " · PlateSeeds plan";
